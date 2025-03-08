@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Upload, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -85,7 +84,7 @@ const FileUpload = ({
         isUploading={isUploading}
       />
 
-      {isUploading && type === 'video' && (
+      {isUploading && (
         <div className="mt-4 space-y-2">
           <Progress value={progress} className="h-2" />
           <p className="text-xs text-gray-500 text-center">{progress}% 上传中...</p>
@@ -96,7 +95,7 @@ const FileUpload = ({
         <input
           type="file"
           accept={accept}
-          onChange={handleFileSelect}
+          onChange={onFileSelect}
           className="hidden"
           id={id}
         />
