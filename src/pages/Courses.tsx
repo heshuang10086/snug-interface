@@ -14,16 +14,23 @@ const Courses = () => {
   const navigate = useNavigate();
 
   const { data: courses, isLoading } = useQuery({
-    queryKey: ["all-courses"], // Changed from "courses" to "all-courses" to match deletion invalidation
+    queryKey: ["all-courses"],
     queryFn: async () => {
+      console.log("Fetching courses...");
       const { data, error } = await supabase
         .from("courses")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching courses:", error);
+        throw error;
+      }
+      console.log("Fetched courses:", data);
       return data;
     },
+    // Force refetch when component mounts
+    refetchOnMount: true
   });
 
   const filteredCourses = courses?.filter((course) =>

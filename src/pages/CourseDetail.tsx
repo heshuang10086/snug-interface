@@ -29,20 +29,25 @@ const CourseDetail = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
+      const { error, count } = await supabase
         .from("courses")
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .select("count");
       
       if (error) throw error;
+      if (!count) throw new Error("课程未找到");
+      
+      return count;
     },
     onSuccess: () => {
       toast.success("课程已删除");
-      // Update to match the query key used in Courses.tsx
-      queryClient.invalidateQueries({ queryKey: ["all-courses"] });
+      // Force an immediate refetch of the courses list
+      queryClient.invalidateQueries({ queryKey: ["all-courses"], refetchType: "all" });
       navigate("/courses");
     },
     onError: (error) => {
+      console.error("Delete error:", error);
       toast.error("删除失败：" + error.message);
     },
   });
