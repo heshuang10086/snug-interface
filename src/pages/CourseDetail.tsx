@@ -34,29 +34,14 @@ const CourseDetail = () => {
       
       console.log("Starting deletion for course ID:", id);
       
-      const { error, count } = await supabase
+      const { error } = await supabase
         .from("courses")
         .delete()
-        .eq("id", id)
-        .select("count"); // 添加count来验证删除的行数
+        .eq("id", id);
       
       if (error) {
         console.error("Delete operation error:", error);
         throw new Error(error.message);
-      }
-
-      console.log("Deletion response:", { count });
-      
-      // 验证删除操作是否真的删除了数据
-      const { data: checkData } = await supabase
-        .from("courses")
-        .select()
-        .eq("id", id)
-        .single();
-        
-      if (checkData) {
-        console.error("Course still exists after deletion", checkData);
-        throw new Error("删除失败：数据仍然存在");
       }
 
       return true;
