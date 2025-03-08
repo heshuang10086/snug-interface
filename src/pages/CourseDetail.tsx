@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +16,7 @@ const CourseDetail = () => {
   const { data: course, isLoading } = useQuery({
     queryKey: ["course", id],
     queryFn: async () => {
+      console.log("Fetching course details for id:", id);
       const { data, error } = await supabase
         .from("courses")
         .select("*")
@@ -22,22 +24,42 @@ const CourseDetail = () => {
         .single();
 
       if (error) throw error;
+      console.log("Fetched course:", data);
       return data;
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
+      console.log("Attempting to delete course with id:", id);
       const { error } = await supabase
         .from("courses")
         .delete()
         .eq("id", id);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Delete operation error:", error);
+        throw error;
+      }
+      
+      // 验证删除是否成功
+      const { data: checkData } = await supabase
+        .from("courses")
+        .select("id")
+        .eq("id", id)
+        .single();
+        
+      if (checkData) {
+        console.error("Course still exists after deletion");
+        throw new Error("删除失败：数据仍然存在");
+      }
+      
+      console.log("Course deleted successfully");
       return true;
     },
     onSuccess: () => {
       toast.success("课程已删除");
+      // 强制重新获取课程列表
       queryClient.invalidateQueries({ queryKey: ["all-courses"] });
       navigate("/courses");
     },
