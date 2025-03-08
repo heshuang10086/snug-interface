@@ -1,3 +1,4 @@
+
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -10,7 +11,7 @@ const Index = () => {
   const { toast } = useToast();
 
   const handleConfirmPassword = (password: string) => {
-    if (password === "admin") {
+    if (password === "ahu@stu123") {
       toast({
         title: "验证成功",
         description: "正在跳转到课程管理页面...",
