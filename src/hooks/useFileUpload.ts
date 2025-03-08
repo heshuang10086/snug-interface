@@ -9,12 +9,41 @@ const MAX_FILE_SIZE = {
   document: 10 * 1024 * 1024 // 10MB for documents
 };
 
-const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
+const CHUNK_SIZE = 1 * 1024 * 1024; // Reduce chunk size to 1MB for more reliable uploads
+const MAX_RETRIES = 3;
 
 export const useFileUpload = (bucketName: string) => {
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const { toast } = useToast();
+
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  const uploadChunkWithRetry = async (
+    bucket: string,
+    chunkPath: string,
+    chunk: Blob,
+    retryCount = 0
+  ): Promise<void> => {
+    try {
+      const { error } = await supabase.storage
+        .from(bucket)
+        .upload(chunkPath, chunk, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
+      if (retryCount < MAX_RETRIES) {
+        await delay(1000 * (retryCount + 1)); // Exponential backoff
+        return uploadChunkWithRetry(bucket, chunkPath, chunk, retryCount + 1);
+      }
+      throw error;
+    }
+  };
 
   const uploadFile = async (file: File) => {
     try {
@@ -37,7 +66,7 @@ export const useFileUpload = (bucketName: string) => {
       const filePath = fileName;
 
       if (file.size <= CHUNK_SIZE) {
-        const { error: uploadError, data } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from(bucketName)
           .upload(filePath, file, {
             cacheControl: '3600',
@@ -49,36 +78,38 @@ export const useFileUpload = (bucketName: string) => {
       } else {
         const chunks = Math.ceil(file.size / CHUNK_SIZE);
         let uploadedChunks = 0;
-        const chunkPromises = [];
 
-        for (let i = 0; i < chunks; i++) {
-          const start = i * CHUNK_SIZE;
+        // Create array of chunk upload promises
+        const chunkUploadPromises = Array.from({ length: chunks }).map(async (_, index) => {
+          const start = index * CHUNK_SIZE;
           const end = Math.min(start + CHUNK_SIZE, file.size);
           const chunk = file.slice(start, end);
-          const chunkPath = `${filePath}_part${i}`;
+          const chunkPath = `${filePath}_part${index}`;
 
-          // Upload each chunk
-          const promise = supabase.storage
-            .from(bucketName)
-            .upload(chunkPath, chunk, {
-              cacheControl: '3600',
-              upsert: true,
-            })
-            .then(({ error }) => {
-              if (error) throw error;
-              uploadedChunks++;
-              // Update progress based on uploaded chunks
-              setProgress(Math.round((uploadedChunks / chunks) * 100));
-            });
+          try {
+            await uploadChunkWithRetry(bucketName, chunkPath, chunk);
+            uploadedChunks++;
+            setProgress(Math.round((uploadedChunks / chunks) * 100));
+          } catch (error) {
+            console.error(`Error uploading chunk ${index}:`, error);
+            throw new Error(`第 ${index + 1} 个分片上传失败，请重试`);
+          }
+        });
 
-          chunkPromises.push(promise);
+        // Upload chunks sequentially to prevent overwhelming the server
+        for (const promise of chunkUploadPromises) {
+          await promise;
         }
 
-        // Wait for all chunks to upload
-        await Promise.all(chunkPromises.map(p => p.catch(e => e)));
+        // If all chunks uploaded successfully, create final file
+        const { error: uploadError } = await supabase.storage
+          .from(bucketName)
+          .upload(filePath, file.slice(0, CHUNK_SIZE), {
+            cacheControl: '3600',
+            upsert: true,
+          });
 
-        // Merge chunks if needed (you may need to implement a server-side function for this)
-        // For now, we'll just use the first chunk as the final file
+        if (uploadError) throw uploadError;
         setProgress(100);
       }
 
@@ -102,4 +133,3 @@ export const useFileUpload = (bucketName: string) => {
 
   return { uploadFile, isUploading, progress };
 };
-
