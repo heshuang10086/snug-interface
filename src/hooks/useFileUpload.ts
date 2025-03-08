@@ -9,8 +9,9 @@ const MAX_FILE_SIZE = {
   document: 10 * 1024 * 1024 // 10MB for documents
 };
 
-const CHUNK_SIZE = 1 * 1024 * 1024; // Reduce chunk size to 1MB for more reliable uploads
+const CHUNK_SIZE = 500 * 1024; // Reduce chunk size to 500KB for more reliable uploads
 const MAX_RETRIES = 3;
+const CONCURRENT_CHUNKS = 3; // Limit concurrent uploads
 
 export const useFileUpload = (bucketName: string) => {
   const [isUploading, setIsUploading] = useState(false);
@@ -34,14 +35,33 @@ export const useFileUpload = (bucketName: string) => {
         });
 
       if (error) {
+        console.error(`Chunk upload error:`, error);
         throw error;
       }
     } catch (error) {
       if (retryCount < MAX_RETRIES) {
-        await delay(1000 * (retryCount + 1)); // Exponential backoff
+        console.log(`Retrying chunk upload, attempt ${retryCount + 1}`);
+        await delay(1000 * Math.pow(2, retryCount)); // Exponential backoff
         return uploadChunkWithRetry(bucket, chunkPath, chunk, retryCount + 1);
       }
       throw error;
+    }
+  };
+
+  const uploadChunksInBatches = async (chunks: { path: string; data: Blob }[]) => {
+    let uploadedChunks = 0;
+    const totalChunks = chunks.length;
+
+    // Process chunks in batches
+    for (let i = 0; i < chunks.length; i += CONCURRENT_CHUNKS) {
+      const batch = chunks.slice(i, i + CONCURRENT_CHUNKS);
+      await Promise.all(
+        batch.map(async ({ path, data }) => {
+          await uploadChunkWithRetry(bucketName, path, data);
+          uploadedChunks++;
+          setProgress(Math.round((uploadedChunks / totalChunks) * 100));
+        })
+      );
     }
   };
 
@@ -60,12 +80,14 @@ export const useFileUpload = (bucketName: string) => {
 
       setIsUploading(true);
       setProgress(0);
+      console.log(`Starting upload of ${file.name} (${file.size} bytes)`);
       
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = fileName;
 
       if (file.size <= CHUNK_SIZE) {
+        console.log('Uploading small file directly');
         const { error: uploadError } = await supabase.storage
           .from(bucketName)
           .upload(filePath, file, {
@@ -76,32 +98,21 @@ export const useFileUpload = (bucketName: string) => {
         if (uploadError) throw uploadError;
         setProgress(100);
       } else {
+        console.log(`Splitting file into chunks of ${CHUNK_SIZE} bytes`);
         const chunks = Math.ceil(file.size / CHUNK_SIZE);
-        let uploadedChunks = 0;
-
-        // Create array of chunk upload promises
-        const chunkUploadPromises = Array.from({ length: chunks }).map(async (_, index) => {
+        const chunkObjects = Array.from({ length: chunks }).map((_, index) => {
           const start = index * CHUNK_SIZE;
           const end = Math.min(start + CHUNK_SIZE, file.size);
-          const chunk = file.slice(start, end);
-          const chunkPath = `${filePath}_part${index}`;
-
-          try {
-            await uploadChunkWithRetry(bucketName, chunkPath, chunk);
-            uploadedChunks++;
-            setProgress(Math.round((uploadedChunks / chunks) * 100));
-          } catch (error) {
-            console.error(`Error uploading chunk ${index}:`, error);
-            throw new Error(`第 ${index + 1} 个分片上传失败，请重试`);
-          }
+          return {
+            path: `${filePath}_part${index}`,
+            data: file.slice(start, end)
+          };
         });
 
-        // Upload chunks sequentially to prevent overwhelming the server
-        for (const promise of chunkUploadPromises) {
-          await promise;
-        }
+        await uploadChunksInBatches(chunkObjects);
 
-        // If all chunks uploaded successfully, create final file
+        // Create final file from first chunk
+        console.log('Creating final file');
         const { error: uploadError } = await supabase.storage
           .from(bucketName)
           .upload(filePath, file.slice(0, CHUNK_SIZE), {
@@ -117,6 +128,7 @@ export const useFileUpload = (bucketName: string) => {
         .from(bucketName)
         .getPublicUrl(filePath);
 
+      console.log('Upload completed successfully');
       return publicUrl;
     } catch (error: any) {
       console.error('Upload error:', error);
