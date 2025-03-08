@@ -37,6 +37,7 @@ const FileUpload = ({
         const duration = video.duration;
         const hours = Math.floor(duration / 3600);
         const minutes = Math.floor((duration % 3600) / 60);
+        const seconds = Math.floor(duration % 60);
         
         let durationStr = '';
         if (hours > 0) {
@@ -44,6 +45,9 @@ const FileUpload = ({
         }
         if (minutes > 0) {
           durationStr += `${minutes}分钟`;
+        }
+        if (seconds > 0 || durationStr === '') {
+          durationStr += `${seconds}秒`;
         }
         
         onVideoDuration?.(durationStr);
