@@ -5,10 +5,12 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import AdminDialog from "@/components/AdminDialog";
 import { useToast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const [showAdminDialog, setShowAdminDialog] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleConfirmPassword = (password: string) => {
     if (password === "ahu@stu123") {
@@ -17,6 +19,8 @@ const Index = () => {
         description: "正在跳转到课程管理页面...",
       });
       setShowAdminDialog(false);
+      // Add navigation to the course creation page
+      navigate("/course/create");
     } else {
       toast({
         variant: "destructive",
