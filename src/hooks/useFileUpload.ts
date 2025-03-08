@@ -9,9 +9,9 @@ const MAX_FILE_SIZE = {
   document: 10 * 1024 * 1024 // 10MB for documents
 };
 
-const CHUNK_SIZE = 500 * 1024; // Reduce chunk size to 500KB for more reliable uploads
+const CHUNK_SIZE = 500 * 1024; // 500KB chunks
 const MAX_RETRIES = 3;
-const CONCURRENT_CHUNKS = 3; // Limit concurrent uploads
+const CONCURRENT_CHUNKS = 3;
 
 export const useFileUpload = (bucketName: string) => {
   const [isUploading, setIsUploading] = useState(false);
@@ -22,14 +22,14 @@ export const useFileUpload = (bucketName: string) => {
 
   const uploadChunkWithRetry = async (
     bucket: string,
-    chunkPath: string,
+    filePath: string,
     chunk: Blob,
     retryCount = 0
   ): Promise<void> => {
     try {
       const { error } = await supabase.storage
         .from(bucket)
-        .upload(chunkPath, chunk, {
+        .upload(filePath, chunk, {
           cacheControl: '3600',
           upsert: true
         });
@@ -41,27 +41,10 @@ export const useFileUpload = (bucketName: string) => {
     } catch (error) {
       if (retryCount < MAX_RETRIES) {
         console.log(`Retrying chunk upload, attempt ${retryCount + 1}`);
-        await delay(1000 * Math.pow(2, retryCount)); // Exponential backoff
-        return uploadChunkWithRetry(bucket, chunkPath, chunk, retryCount + 1);
+        await delay(1000 * Math.pow(2, retryCount));
+        return uploadChunkWithRetry(bucket, filePath, chunk, retryCount + 1);
       }
       throw error;
-    }
-  };
-
-  const uploadChunksInBatches = async (chunks: { path: string; data: Blob }[]) => {
-    let uploadedChunks = 0;
-    const totalChunks = chunks.length;
-
-    // Process chunks in batches
-    for (let i = 0; i < chunks.length; i += CONCURRENT_CHUNKS) {
-      const batch = chunks.slice(i, i + CONCURRENT_CHUNKS);
-      await Promise.all(
-        batch.map(async ({ path, data }) => {
-          await uploadChunkWithRetry(bucketName, path, data);
-          uploadedChunks++;
-          setProgress(Math.round((uploadedChunks / totalChunks) * 100));
-        })
-      );
     }
   };
 
@@ -86,8 +69,9 @@ export const useFileUpload = (bucketName: string) => {
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = fileName;
 
-      if (file.size <= CHUNK_SIZE) {
-        console.log('Uploading small file directly');
+      // For small files or non-video files, upload directly
+      if (file.size <= CHUNK_SIZE || !bucketName.includes('video')) {
+        console.log('Uploading file directly');
         const { error: uploadError } = await supabase.storage
           .from(bucketName)
           .upload(filePath, file, {
@@ -98,30 +82,20 @@ export const useFileUpload = (bucketName: string) => {
         if (uploadError) throw uploadError;
         setProgress(100);
       } else {
-        console.log(`Splitting file into chunks of ${CHUNK_SIZE} bytes`);
-        const chunks = Math.ceil(file.size / CHUNK_SIZE);
-        const chunkObjects = Array.from({ length: chunks }).map((_, index) => {
-          const start = index * CHUNK_SIZE;
-          const end = Math.min(start + CHUNK_SIZE, file.size);
-          return {
-            path: `${filePath}_part${index}`,
-            data: file.slice(start, end)
-          };
-        });
-
-        await uploadChunksInBatches(chunkObjects);
-
-        // Create final file from first chunk
-        console.log('Creating final file');
+        // For large video files, upload in one go but with progress monitoring
+        console.log('Uploading large video file with progress monitoring');
         const { error: uploadError } = await supabase.storage
           .from(bucketName)
-          .upload(filePath, file.slice(0, CHUNK_SIZE), {
+          .upload(filePath, file, {
             cacheControl: '3600',
             upsert: true,
+            onUploadProgress: (progress) => {
+              const percentage = (progress.loaded / progress.total) * 100;
+              setProgress(Math.round(percentage));
+            }
           });
 
         if (uploadError) throw uploadError;
-        setProgress(100);
       }
 
       const { data: { publicUrl } } = supabase.storage
