@@ -95,12 +95,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      delete_course_by_id: {
-        Args: {
-          course_id: string
-        }
-        Returns: undefined
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

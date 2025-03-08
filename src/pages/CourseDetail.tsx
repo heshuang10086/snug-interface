@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,9 +37,10 @@ const CourseDetail = () => {
       
       console.log("Attempting to delete course with ID:", id);
       
-      const { error } = await supabase.rpc('delete_course_by_id', { 
-        course_id: id as string 
-      });
+      const { error } = await supabase
+        .from('courses')
+        .delete()
+        .eq('id', id);
       
       if (error) {
         console.error("Delete operation failed:", error);
