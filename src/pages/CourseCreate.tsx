@@ -75,6 +75,10 @@ const CourseCreate = () => {
     }
   };
 
+  const handleVideoDuration = (duration: string) => {
+    setDuration(duration);
+  };
+
   const handleSubmit = async () => {
     if (!title || !description || !video || !thumbnail || !ppt || !level) {
       toast({
@@ -151,6 +155,7 @@ const CourseCreate = () => {
                 file={video}
                 isUploading={videoUploader.isUploading}
                 onFileSelect={(e) => handleFileSelect(e, 'video')}
+                onVideoDuration={handleVideoDuration}
                 title="上传课程视频"
                 description="支持MP4格式，确保高清品质上传"
                 type="video"

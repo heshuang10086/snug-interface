@@ -13,6 +13,7 @@ interface FileUploadProps {
   title: string;
   description: string;
   type: 'video' | 'thumbnail' | 'ppt';
+  onVideoDuration?: (duration: string) => void;
 }
 
 const FileUpload = ({
@@ -23,8 +24,38 @@ const FileUpload = ({
   onFileSelect,
   title,
   description,
-  type
+  type,
+  onVideoDuration
 }: FileUploadProps) => {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    if (selectedFile && type === 'video') {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      
+      video.onloadedmetadata = () => {
+        const duration = video.duration;
+        const hours = Math.floor(duration / 3600);
+        const minutes = Math.floor((duration % 3600) / 60);
+        
+        let durationStr = '';
+        if (hours > 0) {
+          durationStr += `${hours}小时`;
+        }
+        if (minutes > 0) {
+          durationStr += `${minutes}分钟`;
+        }
+        
+        onVideoDuration?.(durationStr);
+        URL.revokeObjectURL(video.src);
+      };
+      
+      video.src = URL.createObjectURL(selectedFile);
+    }
+    
+    onFileSelect(event);
+  };
+
   return (
     <div className="border-2 border-dashed rounded-lg p-6">
       <div className={`space-y-4 ${file ? 'hidden' : 'block'}`}>
@@ -47,7 +78,7 @@ const FileUpload = ({
         <input
           type="file"
           accept={accept}
-          onChange={onFileSelect}
+          onChange={handleFileSelect}
           className="hidden"
           id={id}
         />
