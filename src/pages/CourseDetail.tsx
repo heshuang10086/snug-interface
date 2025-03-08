@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,6 +31,8 @@ const CourseDetail = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
+      if (!id) throw new Error("No course ID provided");
+      
       const { error } = await supabase
         .from("courses")
         .delete()
@@ -37,7 +40,7 @@ const CourseDetail = () => {
       
       if (error) {
         console.error("Delete operation error:", error);
-        throw error;
+        throw new Error(error.message);
       }
 
       return true;
