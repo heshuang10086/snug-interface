@@ -1,7 +1,7 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useAliyunOssUpload } from "./useAliyunOssUpload";
 
 const MAX_FILE_SIZE = {
   video: 50 * 1024 * 1024, // 50MB for videos (Supabase limit)
@@ -9,12 +9,11 @@ const MAX_FILE_SIZE = {
   document: 10 * 1024 * 1024 // 10MB for documents
 };
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 export const useFileUpload = (bucketName: string) => {
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const { toast } = useToast();
+  const aliyunOssUploader = useAliyunOssUpload();
 
   const uploadFile = async (file: File) => {
     try {
@@ -24,21 +23,16 @@ export const useFileUpload = (bucketName: string) => {
           ? MAX_FILE_SIZE.image 
           : MAX_FILE_SIZE.document;
 
+      // For videos larger than Supabase limit, use Aliyun OSS
+      if (bucketName.includes('video') && file.size > maxSize) {
+        console.log('Large video detected, using Aliyun OSS upload');
+        return await aliyunOssUploader.uploadLargeVideo(file);
+      }
+
+      // For other files that exceed size limit
       if (file.size > maxSize) {
-        if (bucketName.includes('video')) {
-          toast({
-            variant: "destructive",
-            title: "文件过大",
-            description: "由于Supabase存储限制,视频文件不能超过50MB。建议:\n" +
-                        "1. 压缩视频文件\n" +
-                        "2. 使用视频托管服务(如AWS S3、Cloudflare Stream)\n" +
-                        "3. 将视频上传到视频平台后嵌入链接",
-          });
-        } else {
-          const sizeInMB = maxSize / (1024 * 1024);
-          throw new Error(`文件大小超过限制，最大允许上传 ${sizeInMB}MB。请压缩文件后重试。`);
-        }
-        return null;
+        const sizeInMB = maxSize / (1024 * 1024);
+        throw new Error(`文件大小超过限制，最大允许上传 ${sizeInMB}MB。请压缩文件后重试。`);
       }
 
       setIsUploading(true);
