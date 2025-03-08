@@ -30,31 +30,14 @@ const CourseDetail = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      console.log("Attempting to delete course with id:", id);
-      const { error: deleteError } = await supabase
+      const { error } = await supabase
         .from("courses")
         .delete()
         .eq("id", id);
       
-      if (deleteError) {
-        console.error("Delete operation error:", deleteError);
-        throw deleteError;
-      }
-
-      // Only check if delete was successful after the delete operation completes
-      const { data: verifyData, error: verifyError } = await supabase
-        .from("courses")
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
-      
-      if (verifyError) {
-        console.error("Verification error:", verifyError);
-        throw verifyError;
-      }
-
-      if (verifyData) {
-        throw new Error("删除失败：请重试");
+      if (error) {
+        console.error("Delete operation error:", error);
+        throw error;
       }
 
       return true;
