@@ -1,4 +1,3 @@
-
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -6,11 +5,31 @@ import { useState } from "react";
 import AdminDialog from "@/components/AdminDialog";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import CourseCard from "@/components/CourseCard";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 const Index = () => {
   const [showAdminDialog, setShowAdminDialog] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedLevel, setSelectedLevel] = useState<string>("全部");
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const { data: courses, isLoading } = useQuery({
+    queryKey: ["courses"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("courses")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const handleConfirmPassword = (password: string) => {
     if (password === "ahu@stu123") {
@@ -29,6 +48,15 @@ const Index = () => {
       });
     }
   };
+
+  const filteredCourses = courses?.filter((course) => {
+    const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         course.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesLevel = selectedLevel === "全部" || course.level === selectedLevel;
+    return matchesSearch && matchesLevel;
+  });
+
+  const levels = ["全部", "入门", "中级", "进阶", "高级"];
 
   return (
     <div className="min-h-screen bg-white">
@@ -80,14 +108,79 @@ const Index = () => {
         {/* Course Section */}
         <section className="py-16 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-3xl font-bold">精品课程</h2>
-              <Button variant="link" className="text-blue-600">
-                查看全部课程 →
-              </Button>
+            {/* Header */}
+            <div className="flex flex-col gap-6 mb-8">
+              <div className="flex justify-between items-center">
+                <h2 className="text-3xl font-bold">课程中心</h2>
+                <Button onClick={() => setShowAdminDialog(true)} variant="outline">
+                  添加课程
+                </Button>
+              </div>
+              
+              {/* Search and filters */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    className="pl-10"
+                    placeholder="搜索课程..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  {levels.map((level) => (
+                    <Button
+                      key={level}
+                      variant={selectedLevel === level ? "default" : "outline"}
+                      onClick={() => setSelectedLevel(level)}
+                      size="sm"
+                    >
+                      {level}
+                    </Button>
+                  ))}
+                </div>
+              </div>
             </div>
+
+            {/* Course grid */}
+            {isLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((n) => (
+                  <div key={n} className="animate-pulse">
+                    <div className="aspect-video bg-gray-200 rounded-lg" />
+                    <div className="h-4 bg-gray-200 rounded mt-4 w-3/4" />
+                    <div className="h-4 bg-gray-200 rounded mt-2 w-1/2" />
+                  </div>
+                ))}
+              </div>
+            ) : filteredCourses?.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500">没有找到相关课程</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredCourses?.map((course) => (
+                  <CourseCard
+                    key={course.id}
+                    id={course.id}
+                    title={course.title}
+                    description={course.description}
+                    duration={course.duration}
+                    level={course.level}
+                    thumbnailUrl={course.thumbnail_url}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </section>
+
+        <AdminDialog
+          open={showAdminDialog}
+          onOpenChange={setShowAdminDialog}
+          onConfirm={handleConfirmPassword}
+        />
       </main>
 
       <AdminDialog
