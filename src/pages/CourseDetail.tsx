@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,21 +28,20 @@ const CourseDetail = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      const { error, count } = await supabase
+      const { error, data } = await supabase
         .from("courses")
         .delete()
         .eq("id", id)
-        .select("count");
+        .select();
       
       if (error) throw error;
-      if (!count) throw new Error("课程未找到");
+      if (!data?.length) throw new Error("课程未找到");
       
-      return count;
+      return data;
     },
     onSuccess: () => {
       toast.success("课程已删除");
-      // Force an immediate refetch of the courses list
-      queryClient.invalidateQueries({ queryKey: ["all-courses"], refetchType: "all" });
+      queryClient.invalidateQueries({ queryKey: ["all-courses"] });
       navigate("/courses");
     },
     onError: (error) => {
