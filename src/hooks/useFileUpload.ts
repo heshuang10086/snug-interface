@@ -25,8 +25,20 @@ export const useFileUpload = (bucketName: string) => {
           : MAX_FILE_SIZE.document;
 
       if (file.size > maxSize) {
-        const sizeInMB = maxSize / (1024 * 1024);
-        throw new Error(`文件大小超过限制，Supabase最大允许上传 ${sizeInMB}MB。请压缩文件后重试。`);
+        if (bucketName.includes('video')) {
+          toast({
+            variant: "destructive",
+            title: "文件过大",
+            description: "由于Supabase存储限制,视频文件不能超过50MB。建议:\n" +
+                        "1. 压缩视频文件\n" +
+                        "2. 使用视频托管服务(如AWS S3、Cloudflare Stream)\n" +
+                        "3. 将视频上传到视频平台后嵌入链接",
+          });
+        } else {
+          const sizeInMB = maxSize / (1024 * 1024);
+          throw new Error(`文件大小超过限制，最大允许上传 ${sizeInMB}MB。请压缩文件后重试。`);
+        }
+        return null;
       }
 
       setIsUploading(true);
