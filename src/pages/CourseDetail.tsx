@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,14 +32,31 @@ const CourseDetail = () => {
     mutationFn: async () => {
       if (!id) throw new Error("No course ID provided");
       
-      const { error } = await supabase
+      console.log("Starting deletion for course ID:", id);
+      
+      const { error, count } = await supabase
         .from("courses")
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .select("count"); // 添加count来验证删除的行数
       
       if (error) {
         console.error("Delete operation error:", error);
         throw new Error(error.message);
+      }
+
+      console.log("Deletion response:", { count });
+      
+      // 验证删除操作是否真的删除了数据
+      const { data: checkData } = await supabase
+        .from("courses")
+        .select()
+        .eq("id", id)
+        .single();
+        
+      if (checkData) {
+        console.error("Course still exists after deletion", checkData);
+        throw new Error("删除失败：数据仍然存在");
       }
 
       return true;
