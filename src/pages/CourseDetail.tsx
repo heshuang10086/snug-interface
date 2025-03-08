@@ -31,53 +31,33 @@ const CourseDetail = () => {
   const deleteMutation = useMutation({
     mutationFn: async () => {
       if (!id) {
-        const error = new Error("No course ID provided");
-        console.error(error);
-        throw error;
+        console.error("No course ID provided for deletion");
+        throw new Error("No course ID provided");
       }
       
-      console.log("Starting delete operation for course ID:", id);
+      console.log("Attempting to delete course with ID:", id);
       
-      const { data: existingCourse, error: checkError } = await supabase
-        .from('courses')
-        .select('id')
-        .eq('id', id)
-        .single();
-      
-      if (checkError) {
-        console.error("Error checking course existence:", checkError);
-        throw checkError;
-      }
-      
-      if (!existingCourse) {
-        const error = new Error("Course not found");
-        console.error(error);
-        throw error;
-      }
-
-      console.log("Course exists, proceeding with deletion");
-      
-      const { error: deleteError } = await supabase
+      const { error } = await supabase
         .from('courses')
         .delete()
         .eq('id', id);
       
-      if (deleteError) {
-        console.error("Delete operation failed:", deleteError);
-        throw deleteError;
+      if (error) {
+        console.error("Delete operation failed:", error);
+        throw error;
       }
 
       console.log("Course deletion successful");
       return true;
     },
     onSuccess: () => {
-      console.log("Delete mutation succeeded, navigating to courses page");
-      toast.success("课程删除成功");
+      console.log("Mutation successful, navigating to courses page");
+      toast.success("课程已删除");
       queryClient.invalidateQueries({ queryKey: ["all-courses"] });
       navigate("/courses");
     },
     onError: (error) => {
-      console.error("Delete error details:", error);
+      console.error("Delete error:", error);
       toast.error(`删除失败: ${error.message}`);
     },
   });
@@ -85,10 +65,7 @@ const CourseDetail = () => {
   const handleDelete = () => {
     console.log("Delete button clicked for course:", course?.title);
     if (window.confirm("确定要删除这个课程吗？")) {
-      console.log("User confirmed deletion");
       deleteMutation.mutate();
-    } else {
-      console.log("User cancelled deletion");
     }
   };
 
