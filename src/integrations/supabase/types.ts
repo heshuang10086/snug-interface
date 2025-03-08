@@ -17,6 +17,7 @@ export type Database = {
           featured: boolean | null
           id: string
           level: string
+          ppt_url: string | null
           thumbnail_url: string | null
           title: string
           updated_at: string
@@ -29,6 +30,7 @@ export type Database = {
           featured?: boolean | null
           id?: string
           level: string
+          ppt_url?: string | null
           thumbnail_url?: string | null
           title: string
           updated_at?: string
@@ -41,6 +43,7 @@ export type Database = {
           featured?: boolean | null
           id?: string
           level?: string
+          ppt_url?: string | null
           thumbnail_url?: string | null
           title?: string
           updated_at?: string

@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -9,13 +8,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import FileUpload from "@/components/FileUpload";
 
 const CourseCreate = () => {
   const [title, setTitle] = useState("");
@@ -88,7 +88,6 @@ const CourseCreate = () => {
     setIsSubmitting(true);
 
     try {
-      // Upload all files
       const [videoUrl, thumbnailUrl, pptUrl] = await Promise.all([
         videoUploader.uploadFile(video),
         thumbnailUploader.uploadFile(thumbnail),
@@ -99,7 +98,6 @@ const CourseCreate = () => {
         throw new Error("文件上传失败");
       }
 
-      // Create course record
       const { error: courseError } = await supabase
         .from('courses')
         .insert({
@@ -131,7 +129,6 @@ const CourseCreate = () => {
     }
   };
 
-  // Reuse existing JSX structure but update the file input handling
   return (
     <div className="min-h-screen bg-white">
       <Navigation />
@@ -148,87 +145,45 @@ const CourseCreate = () => {
               <label className="text-sm font-medium flex items-center">
                 课程视频 <span className="text-red-500">*</span>
               </label>
-              <div className="border-2 border-dashed rounded-lg p-8 text-center space-y-4">
-                <div className="flex justify-center">
-                  {videoUploader.isUploading ? (
-                    <Loader2 className="h-12 w-12 text-gray-400 animate-spin" />
-                  ) : (
-                    <Upload className="h-12 w-12 text-gray-400" />
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">{video ? video.name : '上传课程视频'}</p>
-                  <p className="text-xs text-gray-500 mt-1">支持MP4格式，确保高清品质上传</p>
-                </div>
-                <input
-                  type="file"
-                  accept="video/*"
-                  onChange={(e) => handleFileSelect(e, 'video')}
-                  className="hidden"
-                  id="video-upload"
-                />
-                <Button variant="outline" onClick={() => document.getElementById('video-upload')?.click()}>
-                  选择文件
-                </Button>
-              </div>
+              <FileUpload
+                id="video-upload"
+                accept="video/*"
+                file={video}
+                isUploading={videoUploader.isUploading}
+                onFileSelect={(e) => handleFileSelect(e, 'video')}
+                title="上传课程视频"
+                description="支持MP4格式，确保高清品质上传"
+              />
             </div>
 
             <div className="space-y-1">
               <label className="text-sm font-medium flex items-center">
                 课程封面图片 <span className="text-red-500">*</span>
               </label>
-              <div className="border-2 border-dashed rounded-lg p-8 text-center space-y-4">
-                <div className="flex justify-center">
-                  {thumbnailUploader.isUploading ? (
-                    <Loader2 className="h-12 w-12 text-gray-400 animate-spin" />
-                  ) : (
-                    <Upload className="h-12 w-12 text-gray-400" />
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">{thumbnail ? thumbnail.name : '上传课程封面'}</p>
-                  <p className="text-xs text-gray-500 mt-1">推荐尺寸 16:9，支持 JPG、PNG 格式</p>
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileSelect(e, 'thumbnail')}
-                  className="hidden"
-                  id="thumbnail-upload"
-                />
-                <Button variant="outline" onClick={() => document.getElementById('thumbnail-upload')?.click()}>
-                  选择图片
-                </Button>
-              </div>
+              <FileUpload
+                id="thumbnail-upload"
+                accept="image/*"
+                file={thumbnail}
+                isUploading={thumbnailUploader.isUploading}
+                onFileSelect={(e) => handleFileSelect(e, 'thumbnail')}
+                title="上传课程封面"
+                description="推荐尺寸 16:9，支持 JPG、PNG 格式"
+              />
             </div>
 
             <div className="space-y-1">
               <label className="text-sm font-medium flex items-center">
                 课程PPT <span className="text-red-500">*</span>
               </label>
-              <div className="border-2 border-dashed rounded-lg p-8 text-center space-y-4">
-                <div className="flex justify-center">
-                  {pptUploader.isUploading ? (
-                    <Loader2 className="h-12 w-12 text-gray-400 animate-spin" />
-                  ) : (
-                    <Upload className="h-12 w-12 text-gray-400" />
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">{ppt ? ppt.name : '上传课程PPT'}</p>
-                  <p className="text-xs text-gray-500 mt-1">支持PPT格式，确保高清品质上传</p>
-                </div>
-                <input
-                  type="file"
-                  accept=".ppt,.pptx"
-                  onChange={(e) => handleFileSelect(e, 'ppt')}
-                  className="hidden"
-                  id="ppt-upload"
-                />
-                <Button variant="outline" onClick={() => document.getElementById('ppt-upload')?.click()}>
-                  选择PPT
-                </Button>
-              </div>
+              <FileUpload
+                id="ppt-upload"
+                accept=".ppt,.pptx"
+                file={ppt}
+                isUploading={pptUploader.isUploading}
+                onFileSelect={(e) => handleFileSelect(e, 'ppt')}
+                title="上传课程PPT"
+                description="支持PPT格式，确保高清品质上传"
+              />
             </div>
 
             <div className="space-y-1">
