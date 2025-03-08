@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -71,11 +72,11 @@ const CourseForm = () => {
   };
 
   const handleSubmit = async () => {
-    if (!title || !description || !video || !thumbnail || !ppt || !level) {
+    if (!title || !description || !video || !thumbnail || !level) {
       toast({
         variant: "destructive",
         title: "请填写所有必填项",
-        description: "请确保已填写所有必填项并上传所需文件",
+        description: "请确保已填写所有必填项并上传必需文件",
       });
       return;
     }
@@ -83,13 +84,18 @@ const CourseForm = () => {
     setIsSubmitting(true);
 
     try {
-      const [videoUrl, thumbnailUrl, pptUrl] = await Promise.all([
+      const [videoUrl, thumbnailUrl] = await Promise.all([
         videoUploader.uploadFile(video),
         thumbnailUploader.uploadFile(thumbnail),
-        pptUploader.uploadFile(ppt),
       ]);
 
-      if (!videoUrl || !thumbnailUrl || !pptUrl) {
+      // PPT upload is optional
+      let pptUrl = null;
+      if (ppt) {
+        pptUrl = await pptUploader.uploadFile(ppt);
+      }
+
+      if (!videoUrl || !thumbnailUrl) {
         throw new Error("文件上传失败");
       }
 
