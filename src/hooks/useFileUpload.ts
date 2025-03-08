@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 const MAX_FILE_SIZE = {
-  video: 50 * 1024 * 1024, // 50MB for videos
+  video: 200 * 1024 * 1024, // 200MB for videos
   image: 5 * 1024 * 1024,  // 5MB for images
   document: 10 * 1024 * 1024 // 10MB for documents
 };
