@@ -28,16 +28,13 @@ const CourseDetail = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      const { error, data } = await supabase
+      const { error } = await supabase
         .from("courses")
         .delete()
-        .eq("id", id)
-        .select();
+        .eq("id", id);
       
       if (error) throw error;
-      if (!data?.length) throw new Error("课程未找到");
-      
-      return data;
+      return true;
     },
     onSuccess: () => {
       toast.success("课程已删除");
