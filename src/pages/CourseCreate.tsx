@@ -153,6 +153,7 @@ const CourseCreate = () => {
                 onFileSelect={(e) => handleFileSelect(e, 'video')}
                 title="上传课程视频"
                 description="支持MP4格式，确保高清品质上传"
+                type="video"
               />
             </div>
 
@@ -168,6 +169,7 @@ const CourseCreate = () => {
                 onFileSelect={(e) => handleFileSelect(e, 'thumbnail')}
                 title="上传课程封面"
                 description="推荐尺寸 16:9，支持 JPG、PNG 格式"
+                type="thumbnail"
               />
             </div>
 
@@ -183,6 +185,7 @@ const CourseCreate = () => {
                 onFileSelect={(e) => handleFileSelect(e, 'ppt')}
                 title="上传课程PPT"
                 description="支持PPT格式，确保高清品质上传"
+                type="ppt"
               />
             </div>
 
