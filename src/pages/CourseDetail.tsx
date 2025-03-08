@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,17 +37,14 @@ const CourseDetail = () => {
       
       console.log("Attempting to delete course with ID:", id);
       
-      const { error, count } = await supabase
-        .from("courses")
-        .delete()
-        .eq('id', id);
+      const { error } = await supabase.rpc('delete_course_by_id', { course_id: id });
       
       if (error) {
         console.error("Delete operation failed:", error);
         throw error;
       }
 
-      console.log(`Deletion completed. Rows affected: ${count}`);
+      console.log("Course deletion successful");
       return true;
     },
     onSuccess: () => {
@@ -58,7 +54,7 @@ const CourseDetail = () => {
       navigate("/courses");
     },
     onError: (error) => {
-      console.error("Delete mutation error:", error);
+      console.error("Delete error:", error);
       toast.error(`删除失败: ${error.message}`);
     },
   });
@@ -166,4 +162,3 @@ const CourseDetail = () => {
 };
 
 export default CourseDetail;
-
