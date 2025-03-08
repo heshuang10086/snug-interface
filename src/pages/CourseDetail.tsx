@@ -31,29 +31,32 @@ const CourseDetail = () => {
   const deleteMutation = useMutation({
     mutationFn: async () => {
       console.log("Attempting to delete course with id:", id);
-      const { error } = await supabase
+      const { error: deleteError } = await supabase
         .from("courses")
         .delete()
         .eq("id", id);
       
-      if (error) {
-        console.error("Delete operation error:", error);
-        throw error;
+      if (deleteError) {
+        console.error("Delete operation error:", deleteError);
+        throw deleteError;
       }
-      
-      // Verify deletion
-      const { data: checkData } = await supabase
+
+      // Only check if delete was successful after the delete operation completes
+      const { data: verifyData, error: verifyError } = await supabase
         .from("courses")
         .select("*")
         .eq("id", id)
         .maybeSingle();
-        
-      if (checkData) {
-        console.error("Course still exists after deletion", checkData);
-        throw new Error("删除失败：数据仍然存在");
-      }
       
-      console.log("Course deleted successfully");
+      if (verifyError) {
+        console.error("Verification error:", verifyError);
+        throw verifyError;
+      }
+
+      if (verifyData) {
+        throw new Error("删除失败：请重试");
+      }
+
       return true;
     },
     onSuccess: () => {
@@ -63,7 +66,7 @@ const CourseDetail = () => {
     },
     onError: (error) => {
       console.error("Delete error:", error);
-      toast.error("删除失败：" + error.message);
+      toast.error(`删除失败: ${error.message}`);
     },
   });
 
