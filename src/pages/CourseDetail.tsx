@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,19 +34,14 @@ const CourseDetail = () => {
       const { error } = await supabase
         .from("courses")
         .delete()
-        .eq("id", id)
-        .select()
-        .maybeSingle();
+        .eq("id", id);
       
       if (error) {
         console.error("Delete operation error:", error);
         throw error;
       }
-
-      // Add a small delay to allow the deletion to be processed
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // 验证删除是否成功
+      // Verify deletion
       const { data: checkData } = await supabase
         .from("courses")
         .select("*")
