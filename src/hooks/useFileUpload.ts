@@ -20,10 +20,8 @@ export const useFileUpload = (bucketName: string) => {
       const { error: uploadError, data } = await supabase.storage
         .from(bucketName)
         .upload(filePath, file, {
-          onUploadProgress: (event) => {
-            const progress = (event.loaded / event.total) * 100;
-            setProgress(Math.round(progress));
-          },
+          cacheControl: '3600',
+          upsert: false,
         });
 
       if (uploadError) {
