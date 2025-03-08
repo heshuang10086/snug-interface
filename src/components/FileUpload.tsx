@@ -2,7 +2,9 @@
 import React from 'react';
 import { Upload, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import FilePreview from './preview/FilePreview';
+import { cn } from "@/lib/utils";
 
 interface FileUploadProps {
   id: string;
@@ -14,6 +16,7 @@ interface FileUploadProps {
   description: string;
   type: 'video' | 'thumbnail' | 'ppt';
   onVideoDuration?: (duration: string) => void;
+  progress?: number;
 }
 
 const FileUpload = ({
@@ -25,7 +28,8 @@ const FileUpload = ({
   title,
   description,
   type,
-  onVideoDuration
+  onVideoDuration,
+  progress = 0
 }: FileUploadProps) => {
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -61,7 +65,10 @@ const FileUpload = ({
   };
 
   return (
-    <div className="border-2 border-dashed rounded-lg p-6">
+    <div className={cn(
+      "border-2 border-dashed rounded-lg p-6 transition-all duration-200",
+      file ? "bg-gray-50/50" : "hover:border-primary/50 hover:bg-gray-50/50"
+    )}>
       <div className={`space-y-4 ${file ? 'hidden' : 'block'}`}>
         <div className="flex justify-center">
           <Upload className="h-12 w-12 text-gray-400" />
@@ -78,6 +85,13 @@ const FileUpload = ({
         isUploading={isUploading}
       />
 
+      {isUploading && type === 'video' && (
+        <div className="mt-4 space-y-2">
+          <Progress value={progress} className="h-2" />
+          <p className="text-xs text-gray-500 text-center">{progress}% 上传中...</p>
+        </div>
+      )}
+
       <div className="mt-4 flex justify-center">
         <input
           type="file"
@@ -87,11 +101,19 @@ const FileUpload = ({
           id={id}
         />
         <Button 
-          variant="outline" 
+          variant="outline"
           onClick={() => document.getElementById(id)?.click()}
           disabled={isUploading}
+          className="hover:bg-primary hover:text-white transition-colors"
         >
-          {file ? '重新选择' : '选择文件'}
+          {isUploading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              上传中...
+            </>
+          ) : (
+            file ? '重新选择' : '选择文件'
+          )}
         </Button>
       </div>
     </div>

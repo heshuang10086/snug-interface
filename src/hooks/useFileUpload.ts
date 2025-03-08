@@ -1,15 +1,17 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export const useFileUpload = (bucketName: string) => {
   const [isUploading, setIsUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const { toast } = useToast();
 
   const uploadFile = async (file: File) => {
     try {
       setIsUploading(true);
+      setProgress(0);
       
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
@@ -17,7 +19,12 @@ export const useFileUpload = (bucketName: string) => {
 
       const { error: uploadError, data } = await supabase.storage
         .from(bucketName)
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          onUploadProgress: (event) => {
+            const progress = (event.loaded / event.total) * 100;
+            setProgress(Math.round(progress));
+          },
+        });
 
       if (uploadError) {
         throw uploadError;
@@ -37,8 +44,9 @@ export const useFileUpload = (bucketName: string) => {
       return null;
     } finally {
       setIsUploading(false);
+      setProgress(0);
     }
   };
 
-  return { uploadFile, isUploading };
+  return { uploadFile, isUploading, progress };
 };
