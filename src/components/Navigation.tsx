@@ -1,7 +1,9 @@
 
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 const Navigation = () => {
+  const location = useLocation();
+
   return (
     <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -13,13 +15,34 @@ const Navigation = () => {
             </Link>
           </div>
           <div className="hidden md:flex items-center space-x-8">
-            <Link to="/" className="text-gray-900 hover:text-blue-600 px-3 py-2 text-sm font-medium border-b-2 border-black">
+            <Link 
+              to="/" 
+              className={`${
+                location.pathname === "/" 
+                  ? "text-gray-900 border-b-2 border-black" 
+                  : "text-gray-600"
+              } hover:text-blue-600 px-3 py-2 text-sm font-medium`}
+            >
               首页
             </Link>
-            <Link to="/courses" className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium">
+            <Link 
+              to="/courses" 
+              className={`${
+                location.pathname === "/courses" 
+                  ? "text-gray-900 border-b-2 border-black" 
+                  : "text-gray-600"
+              } hover:text-blue-600 px-3 py-2 text-sm font-medium`}
+            >
               课程
             </Link>
-            <Link to="/about" className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium">
+            <Link 
+              to="/about" 
+              className={`${
+                location.pathname === "/about" 
+                  ? "text-gray-900 border-b-2 border-black" 
+                  : "text-gray-600"
+              } hover:text-blue-600 px-3 py-2 text-sm font-medium`}
+            >
               关于我们
             </Link>
           </div>

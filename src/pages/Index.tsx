@@ -76,7 +76,11 @@ const Index = () => {
               </p>
               
               <div className="flex justify-center gap-4">
-                <Button size="lg" className="bg-black text-white hover:bg-gray-800">
+                <Button 
+                  size="lg" 
+                  className="bg-black text-white hover:bg-gray-800"
+                  onClick={() => navigate("/courses")}
+                >
                   浏览课程
                 </Button>
                 <Button 
