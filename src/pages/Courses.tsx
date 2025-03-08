@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -13,7 +14,7 @@ const Courses = () => {
   const navigate = useNavigate();
 
   const { data: courses, isLoading } = useQuery({
-    queryKey: ["all-courses"],
+    queryKey: ["all-courses"], // Changed from "courses" to "all-courses" to match deletion invalidation
     queryFn: async () => {
       const { data, error } = await supabase
         .from("courses")

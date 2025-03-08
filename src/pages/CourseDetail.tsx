@@ -38,7 +38,8 @@ const CourseDetail = () => {
     },
     onSuccess: () => {
       toast.success("课程已删除");
-      queryClient.invalidateQueries({ queryKey: ["courses"] });
+      // Update to match the query key used in Courses.tsx
+      queryClient.invalidateQueries({ queryKey: ["all-courses"] });
       navigate("/courses");
     },
     onError: (error) => {
