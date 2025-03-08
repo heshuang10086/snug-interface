@@ -9,10 +9,129 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload } from "lucide-react";
+import { Upload, Loader2 } from "lucide-react";
 import Navigation from "@/components/Navigation";
+import { useFileUpload } from "@/hooks/useFileUpload";
+import { useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const CourseCreate = () => {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [duration, setDuration] = useState("");
+  const [level, setLevel] = useState("beginner");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [video, setVideo] = useState<File | null>(null);
+  const [thumbnail, setThumbnail] = useState<File | null>(null);
+  const [ppt, setPpt] = useState<File | null>(null);
+
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  
+  const videoUploader = useFileUpload("course-videos");
+  const thumbnailUploader = useFileUpload("course-thumbnails");
+  const pptUploader = useFileUpload("course-ppts");
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>, type: 'video' | 'thumbnail' | 'ppt') => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    switch (type) {
+      case 'video':
+        if (!file.type.includes('video/')) {
+          toast({
+            variant: "destructive",
+            title: "格式错误",
+            description: "请上传视频文件",
+          });
+          return;
+        }
+        setVideo(file);
+        break;
+      case 'thumbnail':
+        if (!file.type.includes('image/')) {
+          toast({
+            variant: "destructive",
+            title: "格式错误",
+            description: "请上传图片文件",
+          });
+          return;
+        }
+        setThumbnail(file);
+        break;
+      case 'ppt':
+        if (!file.name.endsWith('.ppt') && !file.name.endsWith('.pptx')) {
+          toast({
+            variant: "destructive",
+            title: "格式错误",
+            description: "请上传PPT文件",
+          });
+          return;
+        }
+        setPpt(file);
+        break;
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!title || !description || !video || !thumbnail || !ppt || !level) {
+      toast({
+        variant: "destructive",
+        title: "请填写所有必填项",
+        description: "请确保已填写所有必填项并上传所需文件",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Upload all files
+      const [videoUrl, thumbnailUrl, pptUrl] = await Promise.all([
+        videoUploader.uploadFile(video),
+        thumbnailUploader.uploadFile(thumbnail),
+        pptUploader.uploadFile(ppt),
+      ]);
+
+      if (!videoUrl || !thumbnailUrl || !pptUrl) {
+        throw new Error("文件上传失败");
+      }
+
+      // Create course record
+      const { error: courseError } = await supabase
+        .from('courses')
+        .insert({
+          title,
+          description,
+          duration,
+          level,
+          video_url: videoUrl,
+          thumbnail_url: thumbnailUrl,
+          ppt_url: pptUrl,
+        });
+
+      if (courseError) throw courseError;
+
+      toast({
+        title: "课程创建成功",
+        description: "课程已成功创建并上传",
+      });
+
+      navigate("/");
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "创建失败",
+        description: "课程创建过程中出现错误，请重试",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Reuse existing JSX structure but update the file input handling
   return (
     <div className="min-h-screen bg-white">
       <Navigation />
@@ -31,13 +150,26 @@ const CourseCreate = () => {
               </label>
               <div className="border-2 border-dashed rounded-lg p-8 text-center space-y-4">
                 <div className="flex justify-center">
-                  <Upload className="h-12 w-12 text-gray-400" />
+                  {videoUploader.isUploading ? (
+                    <Loader2 className="h-12 w-12 text-gray-400 animate-spin" />
+                  ) : (
+                    <Upload className="h-12 w-12 text-gray-400" />
+                  )}
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">上传课程视频</p>
+                  <p className="text-sm text-gray-600">{video ? video.name : '上传课程视频'}</p>
                   <p className="text-xs text-gray-500 mt-1">支持MP4格式，确保高清品质上传</p>
                 </div>
-                <Button variant="outline">选择文件</Button>
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={(e) => handleFileSelect(e, 'video')}
+                  className="hidden"
+                  id="video-upload"
+                />
+                <Button variant="outline" onClick={() => document.getElementById('video-upload')?.click()}>
+                  选择文件
+                </Button>
               </div>
             </div>
 
@@ -47,13 +179,26 @@ const CourseCreate = () => {
               </label>
               <div className="border-2 border-dashed rounded-lg p-8 text-center space-y-4">
                 <div className="flex justify-center">
-                  <Upload className="h-12 w-12 text-gray-400" />
+                  {thumbnailUploader.isUploading ? (
+                    <Loader2 className="h-12 w-12 text-gray-400 animate-spin" />
+                  ) : (
+                    <Upload className="h-12 w-12 text-gray-400" />
+                  )}
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">上传课程封面</p>
+                  <p className="text-sm text-gray-600">{thumbnail ? thumbnail.name : '上传课程封面'}</p>
                   <p className="text-xs text-gray-500 mt-1">推荐尺寸 16:9，支持 JPG、PNG 格式</p>
                 </div>
-                <Button variant="outline">选择图片</Button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFileSelect(e, 'thumbnail')}
+                  className="hidden"
+                  id="thumbnail-upload"
+                />
+                <Button variant="outline" onClick={() => document.getElementById('thumbnail-upload')?.click()}>
+                  选择图片
+                </Button>
               </div>
             </div>
 
@@ -63,13 +208,26 @@ const CourseCreate = () => {
               </label>
               <div className="border-2 border-dashed rounded-lg p-8 text-center space-y-4">
                 <div className="flex justify-center">
-                  <Upload className="h-12 w-12 text-gray-400" />
+                  {pptUploader.isUploading ? (
+                    <Loader2 className="h-12 w-12 text-gray-400 animate-spin" />
+                  ) : (
+                    <Upload className="h-12 w-12 text-gray-400" />
+                  )}
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">上传课程PPT</p>
+                  <p className="text-sm text-gray-600">{ppt ? ppt.name : '上传课程PPT'}</p>
                   <p className="text-xs text-gray-500 mt-1">支持PPT格式，确保高清品质上传</p>
                 </div>
-                <Button variant="outline">选择PPT</Button>
+                <input
+                  type="file"
+                  accept=".ppt,.pptx"
+                  onChange={(e) => handleFileSelect(e, 'ppt')}
+                  className="hidden"
+                  id="ppt-upload"
+                />
+                <Button variant="outline" onClick={() => document.getElementById('ppt-upload')?.click()}>
+                  选择PPT
+                </Button>
               </div>
             </div>
 
@@ -77,24 +235,37 @@ const CourseCreate = () => {
               <label className="text-sm font-medium flex items-center">
                 课程标题 <span className="text-red-500">*</span>
               </label>
-              <Input placeholder="输入课程标题" />
+              <Input 
+                placeholder="输入课程标题" 
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
             </div>
 
             <div className="space-y-1">
               <label className="text-sm font-medium flex items-center">
                 课程描述 <span className="text-red-500">*</span>
               </label>
-              <Textarea placeholder="输入课程详细描述" className="min-h-[100px]" />
+              <Textarea 
+                placeholder="输入课程详细描述" 
+                className="min-h-[100px]"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-sm font-medium">课程时长</label>
-                <Input placeholder="例如: 2小时30分钟" />
+                <Input 
+                  placeholder="例如: 2小时30分钟" 
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                />
               </div>
               <div className="space-y-1">
                 <label className="text-sm font-medium">难度级别</label>
-                <Select>
+                <Select value={level} onValueChange={setLevel}>
                   <SelectTrigger>
                     <SelectValue placeholder="入门" />
                   </SelectTrigger>
@@ -108,8 +279,20 @@ const CourseCreate = () => {
             </div>
 
             <div className="pt-6 flex justify-end space-x-4">
-              <Button variant="outline">取消</Button>
-              <Button>创建课程</Button>
+              <Button variant="outline" onClick={() => navigate("/")}>取消</Button>
+              <Button 
+                onClick={handleSubmit} 
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    创建中...
+                  </>
+                ) : (
+                  '创建课程'
+                )}
+              </Button>
             </div>
           </div>
         </div>
