@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -132,7 +131,7 @@ const CourseDetail = () => {
               className="gap-2"
             >
               <Trash2 className="h-4 w-4" />
-              删除课��
+              删除课程
             </Button>
           </div>
 
