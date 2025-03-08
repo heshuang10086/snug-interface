@@ -30,34 +30,40 @@ const CourseDetail = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      if (!id) throw new Error("No course ID provided");
+      if (!id) {
+        console.error("No course ID provided for deletion");
+        throw new Error("No course ID provided");
+      }
       
-      console.log("Starting deletion for course ID:", id);
+      console.log("Attempting to delete course with ID:", id);
       
       const { error } = await supabase
         .from("courses")
         .delete()
-        .eq("id", id);
+        .match({ id });
       
       if (error) {
-        console.error("Delete operation error:", error);
-        throw new Error(error.message);
+        console.error("Delete operation failed:", error);
+        throw error;
       }
 
+      console.log("Course deletion successful");
       return true;
     },
     onSuccess: () => {
+      console.log("Mutation successful, navigating to courses page");
       toast.success("课程已删除");
       queryClient.invalidateQueries({ queryKey: ["all-courses"] });
       navigate("/courses");
     },
     onError: (error) => {
-      console.error("Delete error:", error);
+      console.error("Delete mutation error:", error);
       toast.error(`删除失败: ${error.message}`);
     },
   });
 
   const handleDelete = () => {
+    console.log("Delete button clicked for course:", course?.title);
     if (window.confirm("确定要删除这个课程吗？")) {
       deleteMutation.mutate();
     }
@@ -113,7 +119,7 @@ const CourseDetail = () => {
               className="gap-2"
             >
               <Trash2 className="h-4 w-4" />
-              删除课程
+              删除课��
             </Button>
           </div>
 
