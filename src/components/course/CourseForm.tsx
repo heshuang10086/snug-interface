@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -126,9 +125,9 @@ const CourseForm = () => {
   };
 
   return (
-    <div className="space-y-8 bg-white shadow-sm rounded-lg p-6">
+    <div className="space-y-8 bg-white shadow-sm rounded-lg p-6 transition-all duration-300 hover:shadow-md animate-scale-in">
       <div className="space-y-6">
-        <div className="space-y-1">
+        <div className="space-y-1 transition-all duration-300 hover:translate-x-1">
           <label className="text-sm font-medium flex items-center">
             课程视频 <span className="text-red-500">*</span>
           </label>
@@ -146,7 +145,7 @@ const CourseForm = () => {
           />
         </div>
 
-        <div className="space-y-1">
+        <div className="space-y-1 transition-all duration-300 hover:translate-x-1">
           <label className="text-sm font-medium flex items-center">
             课程封面图片 <span className="text-red-500">*</span>
           </label>
@@ -163,7 +162,7 @@ const CourseForm = () => {
           />
         </div>
 
-        <div className="space-y-1">
+        <div className="space-y-1 transition-all duration-300 hover:translate-x-1">
           <label className="text-sm font-medium flex items-center">
             课程PPT <span className="text-red-500">*</span>
           </label>
@@ -192,10 +191,17 @@ const CourseForm = () => {
         />
 
         <div className="pt-6 flex justify-end space-x-4">
-          <Button variant="outline" onClick={() => navigate("/")}>取消</Button>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate("/")}
+            className="transition-all duration-300 hover:scale-105"
+          >
+            取消
+          </Button>
           <Button 
             onClick={handleSubmit} 
             disabled={isSubmitting}
+            className="transition-all duration-300 hover:scale-105"
           >
             {isSubmitting ? (
               <>
