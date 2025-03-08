@@ -1,9 +1,30 @@
-
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { useState } from "react";
+import AdminDialog from "@/components/AdminDialog";
+import { useToast } from "@/components/ui/use-toast";
 
 const Index = () => {
+  const [showAdminDialog, setShowAdminDialog] = useState(false);
+  const { toast } = useToast();
+
+  const handleConfirmPassword = (password: string) => {
+    if (password === "admin") {
+      toast({
+        title: "验证成功",
+        description: "正在跳转到课程管理页面...",
+      });
+      setShowAdminDialog(false);
+    } else {
+      toast({
+        variant: "destructive",
+        title: "验证失败",
+        description: "密码错误，请重试",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <Navigation />
@@ -38,7 +59,12 @@ const Index = () => {
                 <Button size="lg" className="bg-black text-white hover:bg-gray-800">
                   浏览课程
                 </Button>
-                <Button size="lg" variant="outline" className="border-2">
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="border-2"
+                  onClick={() => setShowAdminDialog(true)}
+                >
                   添加课程
                 </Button>
               </div>
@@ -58,6 +84,12 @@ const Index = () => {
           </div>
         </section>
       </main>
+
+      <AdminDialog
+        open={showAdminDialog}
+        onOpenChange={setShowAdminDialog}
+        onConfirm={handleConfirmPassword}
+      />
     </div>
   );
 };
