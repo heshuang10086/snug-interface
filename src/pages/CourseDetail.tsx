@@ -35,22 +35,27 @@ const CourseDetail = () => {
       const { error } = await supabase
         .from("courses")
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .select()
+        .maybeSingle();
       
       if (error) {
         console.error("Delete operation error:", error);
         throw error;
       }
+
+      // Add a small delay to allow the deletion to be processed
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       // 验证删除是否成功
       const { data: checkData } = await supabase
         .from("courses")
-        .select("id")
+        .select("*")
         .eq("id", id)
-        .single();
+        .maybeSingle();
         
       if (checkData) {
-        console.error("Course still exists after deletion");
+        console.error("Course still exists after deletion", checkData);
         throw new Error("删除失败：数据仍然存在");
       }
       
@@ -59,7 +64,6 @@ const CourseDetail = () => {
     },
     onSuccess: () => {
       toast.success("课程已删除");
-      // 强制重新获取课程列表
       queryClient.invalidateQueries({ queryKey: ["all-courses"] });
       navigate("/courses");
     },
