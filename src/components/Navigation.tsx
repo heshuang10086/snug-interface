@@ -10,10 +10,11 @@ const Navigation = () => {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
-              <img src="/lovable-uploads/c4a1f13a-2915-4373-bc89-b849b049fc81.png" alt="骏杰人力" className="h-8 w-auto" />
-              <span className="ml-2 text-xl font-semibold">骏杰人力</span>
+              <img src="/lovable-uploads/7c10db47-662a-4d5c-be90-d7f8bda3be6c.png" alt="骏杰人才" className="h-8 w-auto" />
+              <span className="ml-2 text-xl font-semibold">骏杰人才</span>
             </Link>
           </div>
+          
           <div className="hidden md:flex items-center space-x-8">
             <Link 
               to="/" 
