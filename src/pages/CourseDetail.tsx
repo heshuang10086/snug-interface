@@ -1,14 +1,17 @@
+
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, Video, FileText } from "lucide-react";
+import { ArrowLeft, Download, Video, FileText, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { toast } from "sonner";
 
 const CourseDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: course, isLoading } = useQuery({
     queryKey: ["course", id],
@@ -23,6 +26,31 @@ const CourseDetail = () => {
       return data;
     },
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("courses")
+        .delete()
+        .eq("id", id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("课程已删除");
+      queryClient.invalidateQueries({ queryKey: ["courses"] });
+      navigate("/courses");
+    },
+    onError: (error) => {
+      toast.error("删除失败：" + error.message);
+    },
+  });
+
+  const handleDelete = () => {
+    if (window.confirm("确定要删除这个课程吗？")) {
+      deleteMutation.mutate();
+    }
+  };
 
   if (isLoading) {
     return (
@@ -56,16 +84,26 @@ const CourseDetail = () => {
       <Navigation />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24">
         <div className="py-8">
-          <div className="flex items-center gap-4 mb-6">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate(-1)}
-              className="hover:bg-gray-100"
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate(-1)}
+                className="hover:bg-gray-100"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h1 className="text-3xl font-bold text-gray-900">{course.title}</h1>
+            </div>
+            <Button 
+              variant="destructive" 
+              onClick={handleDelete}
+              className="gap-2"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <Trash2 className="h-4 w-4" />
+              删除课程
             </Button>
-            <h1 className="text-3xl font-bold text-gray-900">{course.title}</h1>
           </div>
 
           <div className="space-y-8">
