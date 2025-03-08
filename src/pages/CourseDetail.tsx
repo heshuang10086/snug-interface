@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,21 +87,19 @@ const CourseDetail = () => {
             {/* PPT Section */}
             {course.ppt_url && (
               <Card className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    <h2 className="text-xl font-semibold">课程讲义</h2>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FileText className="h-5 w-5" />
+                      <h2 className="text-xl font-semibold">课程讲义</h2>
+                    </div>
+                    <p className="text-gray-500">点击右侧按钮下载课程讲义</p>
                   </div>
                   <Button onClick={() => window.open(course.ppt_url, '_blank')}>
                     <Download className="mr-2 h-4 w-4" />
                     下载讲义
                   </Button>
                 </div>
-                <iframe
-                  src={course.ppt_url}
-                  className="w-full h-[500px] rounded-lg border"
-                  title="Course PPT"
-                />
               </Card>
             )}
           </div>
