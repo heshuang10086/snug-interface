@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,40 +32,52 @@ const CourseDetail = () => {
   const deleteMutation = useMutation({
     mutationFn: async () => {
       if (!id) {
-        console.error("No course ID provided for deletion");
-        throw new Error("No course ID provided");
+        throw new Error("课程ID不存在");
       }
-      
-      console.log("Attempting to delete course with ID:", id);
-      
-      const { error } = await supabase
+
+      // 先验证课程是否存在
+      const { data: course, error: fetchError } = await supabase
+        .from('courses')
+        .select('id')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) {
+        console.error("Error fetching course:", fetchError);
+        throw new Error("验证课程时出错");
+      }
+
+      if (!course) {
+        throw new Error("课程未找到");
+      }
+
+      // 执行删除操作
+      const { error: deleteError } = await supabase
         .from('courses')
         .delete()
         .eq('id', id);
-      
-      if (error) {
-        console.error("Delete operation failed:", error);
-        throw error;
+
+      if (deleteError) {
+        console.error("Delete error details:", deleteError);
+        throw new Error(`删除失败: ${deleteError.message}`);
       }
 
-      console.log("Course deletion successful");
       return true;
     },
     onSuccess: () => {
-      console.log("Mutation successful, navigating to courses page");
-      toast.success("课程已删除");
+      toast.success("课程已成功删除");
       queryClient.invalidateQueries({ queryKey: ["all-courses"] });
       navigate("/courses");
     },
-    onError: (error) => {
-      console.error("Delete error:", error);
-      toast.error(`删除失败: ${error.message}`);
+    onError: (error: Error) => {
+      console.error("Delete mutation error:", error);
+      toast.error(error.message);
     },
   });
 
   const handleDelete = () => {
-    console.log("Delete button clicked for course:", course?.title);
     if (window.confirm("确定要删除这个课程吗？")) {
+      console.log("Attempting to delete course with ID:", id);
       deleteMutation.mutate();
     }
   };
