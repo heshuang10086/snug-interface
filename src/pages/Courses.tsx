@@ -1,14 +1,16 @@
-
 import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import CourseCard from "@/components/CourseCard";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const Courses = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
 
   const { data: courses, isLoading } = useQuery({
     queryKey: ["all-courses"],
@@ -32,7 +34,18 @@ const Courses = () => {
       <Navigation />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24">
         <div className="py-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">课程中心</h1>
+          <div className="flex items-center gap-4 mb-6">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/")}
+              className="hover:bg-gray-100"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-3xl font-bold text-gray-900">课程中心</h1>
+          </div>
+          
           <div className="relative w-full max-w-md mb-8">
             <Input
               type="text"
@@ -43,6 +56,7 @@ const Courses = () => {
             />
             <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
           </div>
+          
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {isLoading ? (
               [...Array(6)].map((_, i) => (
