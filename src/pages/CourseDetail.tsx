@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -123,14 +122,12 @@ const CourseDetail = () => {
     }
   };
 
-  // Video error handling
-  const handleVideoError = (error: any) => {
-    console.error('Video playback error:', error);
+  const handleVideoError = (event: React.SyntheticEvent<HTMLVideoElement, Event>) => {
+    console.error('Video playback error:', event);
     setError('视频加载失败，请刷新页面重试');
     setIsLoading(false);
   };
 
-  // Video loaded handling
   const handleVideoLoaded = () => {
     setIsLoading(false);
     setError(null);
@@ -191,7 +188,6 @@ const CourseDetail = () => {
           </div>
 
           <div className="space-y-8">
-            {/* Video Section */}
             <Card className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Video className="h-5 w-5" />
@@ -217,11 +213,10 @@ const CourseDetail = () => {
                     onLoadedData={handleVideoLoaded}
                     preload="metadata"
                     controlsList="nodownload"
-                    crossOrigin="anonymous"
                   >
-                    {course.video_chunks.map((chunk) => (
+                    {course.video_chunks.map((chunk, index) => (
                       <source 
-                        key={chunk.id}
+                        key={`chunk-${index}`}
                         src={chunk.chunk_url}
                         type="video/mp4"
                       />
@@ -237,7 +232,6 @@ const CourseDetail = () => {
                     onLoadedData={handleVideoLoaded}
                     preload="metadata"
                     controlsList="nodownload"
-                    crossOrigin="anonymous"
                     className="w-full h-full rounded-lg"
                   >
                     <p>您的浏览器不支持HTML5视频播放</p>
@@ -246,7 +240,6 @@ const CourseDetail = () => {
               </div>
             </Card>
 
-            {/* PPT Section */}
             {course.ppt_url && (
               <Card className="p-6">
                 <div className="flex items-center gap-2">
@@ -272,4 +265,3 @@ const CourseDetail = () => {
 };
 
 export default CourseDetail;
-
