@@ -43,33 +43,49 @@ export const useCourseSubmit = () => {
     setIsSubmitting(true);
 
     try {
-      const [videoUrl, thumbnailUrl] = await Promise.all([
+      // Upload files
+      const [videoUpload, thumbnailUpload, pptUpload] = await Promise.all([
         videoUploader.uploadFile(video),
         thumbnailUploader.uploadFile(thumbnail),
+        ppt ? pptUploader.uploadFile(ppt) : Promise.resolve(null),
       ]);
 
-      let pptUrl = null;
-      if (ppt) {
-        pptUrl = await pptUploader.uploadFile(ppt);
-      }
-
-      if (!videoUrl || !thumbnailUrl) {
+      if (!videoUpload || !thumbnailUpload) {
         throw new Error("文件上传失败");
       }
 
-      const { error: courseError } = await supabase
+      // Insert course
+      const { data: course, error: courseError } = await supabase
         .from('courses')
         .insert({
           title,
           description,
           duration,
           level,
-          video_url: videoUrl,
-          thumbnail_url: thumbnailUrl,
-          ppt_url: pptUrl,
-        });
+          video_url: videoUpload.urls[0], // First chunk URL
+          thumbnail_url: thumbnailUpload.urls[0],
+          ppt_url: pptUpload?.urls[0] || null,
+          video_chunks_count: videoUpload.chunksCount
+        })
+        .select()
+        .single();
 
       if (courseError) throw courseError;
+
+      // Insert video chunks if there are multiple chunks
+      if (videoUpload.urls.length > 1) {
+        const chunkInserts = videoUpload.urls.map((url, index) => ({
+          course_id: course.id,
+          chunk_index: index,
+          chunk_url: url
+        }));
+
+        const { error: chunksError } = await supabase
+          .from('video_chunks')
+          .insert(chunkInserts);
+
+        if (chunksError) throw chunksError;
+      }
 
       toast({
         title: "课程创建成功",
@@ -77,11 +93,12 @@ export const useCourseSubmit = () => {
       });
 
       navigate("/");
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Course creation error:', error);
       toast({
         variant: "destructive",
         title: "创建失败",
-        description: "课程创建过程中出现错误，请重试",
+        description: error.message || "课程创建过程中出现错误，请重试",
       });
     } finally {
       setIsSubmitting(false);

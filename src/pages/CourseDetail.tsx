@@ -16,15 +16,28 @@ const CourseDetail = () => {
     queryKey: ["course", id],
     queryFn: async () => {
       console.log("Fetching course details for id:", id);
-      const { data, error } = await supabase
-        .from("courses")
-        .select("*")
-        .eq("id", id)
-        .single();
+      const [courseResult, chunksResult] = await Promise.all([
+        supabase
+          .from("courses")
+          .select("*")
+          .eq("id", id)
+          .single(),
+        supabase
+          .from("video_chunks")
+          .select("*")
+          .eq("course_id", id)
+          .order("chunk_index")
+      ]);
 
-      if (error) throw error;
-      console.log("Fetched course:", data);
-      return data;
+      if (courseResult.error) throw courseResult.error;
+      
+      const courseData = courseResult.data;
+      if (courseData.video_chunks_count > 1) {
+        courseData.video_chunks = chunksResult.data || [];
+      }
+      
+      console.log("Fetched course:", courseData);
+      return courseData;
     },
   });
 
@@ -143,11 +156,24 @@ const CourseDetail = () => {
                 <h2 className="text-xl font-semibold">课程视频</h2>
               </div>
               <div className="aspect-video">
-                <video
-                  src={course.video_url}
-                  controls
-                  className="w-full h-full rounded-lg"
-                />
+                {course.video_chunks_count > 1 ? (
+                  <video controls className="w-full h-full rounded-lg">
+                    {course.video_chunks.map((chunk: any) => (
+                      <source 
+                        key={chunk.id} 
+                        src={chunk.chunk_url} 
+                        type="video/mp4" 
+                      />
+                    ))}
+                    Your browser does not support HTML5 video.
+                  </video>
+                ) : (
+                  <video
+                    src={course.video_url}
+                    controls
+                    className="w-full h-full rounded-lg"
+                  />
+                )}
               </div>
             </Card>
 

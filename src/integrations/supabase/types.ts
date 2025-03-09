@@ -21,6 +21,7 @@ export type Database = {
           thumbnail_url: string | null
           title: string
           updated_at: string
+          video_chunks_count: number | null
           video_url: string
         }
         Insert: {
@@ -34,6 +35,7 @@ export type Database = {
           thumbnail_url?: string | null
           title: string
           updated_at?: string
+          video_chunks_count?: number | null
           video_url: string
         }
         Update: {
@@ -47,6 +49,7 @@ export type Database = {
           thumbnail_url?: string | null
           title?: string
           updated_at?: string
+          video_chunks_count?: number | null
           video_url?: string
         }
         Relationships: []
@@ -89,6 +92,38 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      video_chunks: {
+        Row: {
+          chunk_index: number
+          chunk_url: string
+          course_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          chunk_index: number
+          chunk_url: string
+          course_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          chunk_index?: number
+          chunk_url?: string
+          course_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_chunks_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
