@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +7,30 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, Video, FileText, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+
+interface VideoChunk {
+  id: string;
+  course_id: string;
+  chunk_index: number;
+  chunk_url: string;
+  created_at: string;
+}
+
+interface CourseWithChunks {
+  id: string;
+  title: string;
+  description: string;
+  video_url: string;
+  thumbnail_url: string | null;
+  ppt_url: string | null;
+  duration: string | null;
+  level: string;
+  created_at: string;
+  updated_at: string;
+  featured: boolean | null;
+  video_chunks_count: number | null;
+  video_chunks?: VideoChunk[];
+}
 
 const CourseDetail = () => {
   const { id } = useParams();
@@ -31,9 +56,9 @@ const CourseDetail = () => {
 
       if (courseResult.error) throw courseResult.error;
       
-      const courseData = courseResult.data;
-      if (courseData.video_chunks_count > 1) {
-        courseData.video_chunks = chunksResult.data || [];
+      const courseData = courseResult.data as CourseWithChunks;
+      if (courseData.video_chunks_count && courseData.video_chunks_count > 1) {
+        courseData.video_chunks = chunksResult.data;
       }
       
       console.log("Fetched course:", courseData);
@@ -156,13 +181,13 @@ const CourseDetail = () => {
                 <h2 className="text-xl font-semibold">课程视频</h2>
               </div>
               <div className="aspect-video">
-                {course.video_chunks_count > 1 ? (
+                {course.video_chunks_count && course.video_chunks_count > 1 && course.video_chunks ? (
                   <video controls className="w-full h-full rounded-lg">
-                    {course.video_chunks.map((chunk: any) => (
+                    {course.video_chunks.map((chunk) => (
                       <source 
-                        key={chunk.id} 
-                        src={chunk.chunk_url} 
-                        type="video/mp4" 
+                        key={chunk.id}
+                        src={chunk.chunk_url}
+                        type="video/mp4"
                       />
                     ))}
                     Your browser does not support HTML5 video.
