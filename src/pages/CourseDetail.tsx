@@ -182,7 +182,12 @@ const CourseDetail = () => {
               </div>
               <div className="aspect-video">
                 {course.video_chunks_count && course.video_chunks_count > 1 && course.video_chunks ? (
-                  <video controls className="w-full h-full rounded-lg">
+                  <video 
+                    controls 
+                    className="w-full h-full rounded-lg"
+                    preload="metadata"
+                    controlsList="nodownload"
+                  >
                     {course.video_chunks.map((chunk) => (
                       <source 
                         key={chunk.id}
@@ -190,14 +195,18 @@ const CourseDetail = () => {
                         type="video/mp4"
                       />
                     ))}
-                    Your browser does not support HTML5 video.
+                    <p>您的浏览器不支持HTML5视频播放</p>
                   </video>
                 ) : (
                   <video
                     src={course.video_url}
                     controls
+                    preload="metadata"
+                    controlsList="nodownload"
                     className="w-full h-full rounded-lg"
-                  />
+                  >
+                    <p>您的浏览器不支持HTML5视频播放</p>
+                  </video>
                 )}
               </div>
             </Card>
