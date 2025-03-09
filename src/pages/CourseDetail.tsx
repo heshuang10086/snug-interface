@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, Video, FileText, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+import { useEffect, useRef, useState } from "react";
 
 interface VideoChunk {
   id: string;
@@ -36,8 +37,11 @@ const CourseDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const { data: course, isLoading } = useQuery({
+  const { data: course, isLoading: isCourseLoading } = useQuery({
     queryKey: ["course", id],
     queryFn: async () => {
       console.log("Fetching course details for id:", id);
@@ -119,7 +123,20 @@ const CourseDetail = () => {
     }
   };
 
-  if (isLoading) {
+  // Video error handling
+  const handleVideoError = (error: any) => {
+    console.error('Video playback error:', error);
+    setError('视频加载失败，请刷新页面重试');
+    setIsLoading(false);
+  };
+
+  // Video loaded handling
+  const handleVideoLoaded = () => {
+    setIsLoading(false);
+    setError(null);
+  };
+
+  if (isCourseLoading) {
     return (
       <div className="min-h-screen bg-white">
         <Navigation />
@@ -180,13 +197,27 @@ const CourseDetail = () => {
                 <Video className="h-5 w-5" />
                 <h2 className="text-xl font-semibold">课程视频</h2>
               </div>
-              <div className="aspect-video">
+              <div className="aspect-video relative">
+                {error && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
+                    <p className="text-red-500">{error}</p>
+                  </div>
+                )}
+                {isLoading && !error && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
+                    <p className="text-gray-500">视频加载中...</p>
+                  </div>
+                )}
                 {course.video_chunks_count && course.video_chunks_count > 1 && course.video_chunks ? (
                   <video 
+                    ref={videoRef}
                     controls 
                     className="w-full h-full rounded-lg"
+                    onError={handleVideoError}
+                    onLoadedData={handleVideoLoaded}
                     preload="metadata"
                     controlsList="nodownload"
+                    crossOrigin="anonymous"
                   >
                     {course.video_chunks.map((chunk) => (
                       <source 
@@ -199,10 +230,14 @@ const CourseDetail = () => {
                   </video>
                 ) : (
                   <video
-                    src={course.video_url}
+                    ref={videoRef}
                     controls
+                    src={course.video_url}
+                    onError={handleVideoError}
+                    onLoadedData={handleVideoLoaded}
                     preload="metadata"
                     controlsList="nodownload"
+                    crossOrigin="anonymous"
                     className="w-full h-full rounded-lg"
                   >
                     <p>您的浏览器不支持HTML5视频播放</p>
@@ -237,3 +272,4 @@ const CourseDetail = () => {
 };
 
 export default CourseDetail;
+
