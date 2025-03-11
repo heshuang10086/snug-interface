@@ -75,7 +75,6 @@ const CourseDetail = () => {
         throw new Error("课程ID不存在");
       }
 
-      // 先验证课程是否存在
       const { data: course, error: fetchError } = await supabase
         .from('courses')
         .select('id')
@@ -91,7 +90,6 @@ const CourseDetail = () => {
         throw new Error("课程未找到");
       }
 
-      // 执行删除操作
       const { error: deleteError } = await supabase
         .from('courses')
         .delete()
@@ -124,8 +122,18 @@ const CourseDetail = () => {
 
   const handleVideoError = (event: React.SyntheticEvent<HTMLVideoElement, Event>) => {
     console.error('Video playback error:', event);
-    setError('视频加载失败，请刷新页面重试');
+    const videoElement = event.target as HTMLVideoElement;
+    const errorMessage = videoElement.error ? 
+      `视频加载失败: ${videoElement.error.message}` : 
+      '视频加载失败，请刷新页面重试';
+    setError(errorMessage);
     setIsLoading(false);
+  };
+
+  const handleSourceError = (event: React.SyntheticEvent<HTMLSourceElement, Event>) => {
+    console.error('Source loading error:', event);
+    const sourceElement = event.target as HTMLSourceElement;
+    console.log('Failed source URL:', sourceElement.src);
   };
 
   const handleVideoLoaded = () => {
@@ -219,6 +227,7 @@ const CourseDetail = () => {
                         key={`chunk-${index}`}
                         src={chunk.chunk_url}
                         type="video/mp4"
+                        onError={handleSourceError}
                       />
                     ))}
                     <p>您的浏览器不支持HTML5视频播放</p>

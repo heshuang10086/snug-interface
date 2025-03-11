@@ -22,7 +22,7 @@ export type Database = {
           title: string
           updated_at: string
           video_chunks_count: number | null
-          video_url: string
+          video_url: string | null
         }
         Insert: {
           created_at?: string
@@ -36,7 +36,7 @@ export type Database = {
           title: string
           updated_at?: string
           video_chunks_count?: number | null
-          video_url: string
+          video_url?: string | null
         }
         Update: {
           created_at?: string
@@ -50,7 +50,7 @@ export type Database = {
           title?: string
           updated_at?: string
           video_chunks_count?: number | null
-          video_url?: string
+          video_url?: string | null
         }
         Relationships: []
       }
